@@ -1,2 +1,4 @@
 # Balance-in-Elderly
 This code helps analyzing different models modified in OpenSim and Scone to show age-related effects.
+
+The project to which this code belongs aims to simulate postural stability in older adults using OpenSim software. Three simplified musculoskeletal models are employed to assess the impact of reduced muscle strength and joint flexibility on balance recovery during perturbations. By simulating basic postural control strategies, such as ankle and hip movements, the study will analyze how age-related changes affect these compensatory responses. The goal is to identify which of this effect makes the most impact. Simulations in scone are also implemented to see if we can verify them, which means, they align with the experimental data consolidated in the literature, so that they can be used by doctors and engineers to have a clear vision of what actually happens with aging when it comes to providing support to improve quality of life.
