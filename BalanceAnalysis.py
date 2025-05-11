@@ -22,23 +22,22 @@ paths = [
     '/Users/marti/Documents/SCONE/results/250417.114710.modelo3.R32.BW.D30.R3/0162_47.247_1.430.par.sto'
 ]
 
+label_map = {
+    '0225_2.219_1.951.par.sto':  'Model 1: reduced force',
+    '0388_94.535_2.214.par.sto':  'Model 2: slower activation',
+    '0162_47.247_1.430.par.sto':  'Model 3: reduced fibers',
+}
+
 dfs = {Path(p).name: load_sto(p) for p in paths}
 
 
 variables_balance = [
-    # CoM
     'com_x','com_y','com_z','com_x_dot','com_y_dot',
-    # CoP
     'cop_x_r','cop_y_r','cop_x_l','cop_y_l',
-    # GRF
     'grf_vz_r','grf_vx_r','grf_vy_r',
     'grf_vz_l','grf_vx_l','grf_vy_l',
-    # angles
     'pelvis_tilt','pelvis_list','pelvis_rotation',
     'hip_flexion_r','knee_angle_r','ankle_angle_r',
-    # moments
-    'moment_hip_flexion_r','moment_knee_flexion_r','moment_ankle_flexion_r',
-    'force_tib_ant_r','force_gas_med_r'
 ]
 
 balance_dfs = {
@@ -60,7 +59,6 @@ for model in summary_df['model'].unique():
     sub = summary_df[summary_df['model'] == model]
     print(sub[['variable','mean','std','min','max']].to_string(index=False))
 
-
 com_vars = ['com_x','com_y','com_z']
 
 grf_vars_l = ['leg0_l.grf_x','leg0_l.grf_y','leg0_l.grf_z']
@@ -70,14 +68,12 @@ com_summary   = []
 force_summary = []
 
 for model_name, df in dfs.items():
-    # 1) Centro de Masa
     available_com = [c for c in com_vars if c in df.columns]
     stats_com = df[available_com].agg(['mean','std','min','max']).T
     stats_com['model'] = model_name
     stats_com = stats_com.reset_index().rename(columns={'index':'variable'})
     com_summary.append(stats_com)
     
-    # Contact forces
     avail_l = [c for c in grf_vars_l if c in df.columns]
     fl = df[avail_l].copy()
     fl['res_l'] = np.sqrt((fl**2).sum(axis=1))
@@ -105,17 +101,14 @@ for model_name, df in dfs.items():
             'max':  fr['res_r'].max()
         })
 
-
 com_df   = pd.concat(com_summary,   ignore_index=True)
 force_df = pd.DataFrame(force_summary)
 
-
-print("\n=== Resumen Centro de Masa ===")
+print("\n=== Center of mass summary ===")
 print(com_df.to_string(index=False))
 
-print("\n=== Resumen Fuerzas de Contacto (GRF) ===")
+print("\n=== GRF summary ===")
 print(force_df.to_string(index=False))
-
 
 for name, df in dfs.items():
     df['res_l'] = np.sqrt(df['leg0_l.grf_x']**2 + df['leg0_l.grf_y']**2 + df['leg0_l.grf_z']**2)
@@ -123,7 +116,8 @@ for name, df in dfs.items():
 
 plt.figure()
 for name, df in dfs.items():
-    plt.plot(df['time'], df['res_l'], label=name)
+    lbl = label_map.get(name, name) 
+    plt.plot(df['time'], df['res_l'], label=lbl)
 plt.xlabel('Time (s)')
 plt.ylabel('Resultant GRF Left (N)')
 plt.title('Resultant Ground Reaction Force - Left Foot')
@@ -133,7 +127,8 @@ plt.show()
 
 plt.figure()
 for name, df in dfs.items():
-    plt.plot(df['time'], df['res_r'], label=name)
+    lbl = label_map.get(name, name) 
+    plt.plot(df['time'], df['res_r'], label=lbl)
 plt.xlabel('Time (s)')
 plt.ylabel('Resultant GRF Right (N)')
 plt.title('Resultant Ground Reaction Force - Right Foot')
@@ -144,10 +139,32 @@ plt.show()
 for axis in ['com_x', 'com_y', 'com_z']:
     plt.figure()
     for name, df in dfs.items():
-        plt.plot(df['time'], df[axis], label=name)
+        lbl = label_map.get(name, name) 
+        plt.plot(df['time'], df[axis], label=lbl)
     plt.xlabel('Time (s)')
     plt.ylabel(f'{axis} (m)')
     plt.title(f'Center of Mass - {axis}')
     plt.legend()
     plt.tight_layout()
     plt.show()
+
+angle_vars = ['pelvis_tilt', 'hip_flexion_r', 'knee_angle_r', 'ankle_angle_r']
+
+for var in angle_vars:
+    plt.figure()  # figura nueva por variable
+    for model_name, df in dfs.items():
+        lbl = label_map.get(model_name, model_name) 
+        if var in df.columns:
+            # Si quieres normalizar en porcentaje de ciclo:
+            x = np.linspace(0, 100, len(df))
+            y = df[var].values
+            plt.plot(x, y, label=lbl)
+    plt.title(var)
+    plt.xlabel('Ciclo (%)')
+    plt.ylabel(var.replace('_', ' '))
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+
